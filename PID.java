@@ -12,6 +12,7 @@ public class PID {
                     iExpo,
                     dExpo,
                     lastVal,
+                    proportion,
                     integral,
                     derivative;
                    
@@ -35,6 +36,8 @@ public class PID {
         this.lastVal = this.crntVal;
         this.crntVal = val;
 
+        this.proportion = this.targetVal - this.crntVal;
+
         double timeDiff = Instant.now().minusNanos(this.lastTime.getNano()).getNano(); // calculate time since last update
         if (this.lastTime != Instant.MIN){
             this.integral += (this.lastVal - this.targetVal + (this.crntVal - this.lastVal)/2) //get value difference
@@ -55,6 +58,16 @@ public class PID {
 
 
     public double calcDesiredVal(){
-        return this.crntVal + this.pExpo*(this.targetVal - this.crntVal) + this.iExpo*this.integral + this.dExpo*this.derivative;
+        return this.crntVal + this.pExpo*this.proportion + this.iExpo*this.integral + this.dExpo*this.derivative;
+    }
+
+    /**
+     * renders the current state of the PID controller to the console
+     */
+    public void renderToConsole(){
+        System.out.println("|  crntVal  |  targVal  |  dsrdVal  |     P     |     I     |     D     |");
+        System.out.println("| % #8.2E | % #8.2E | % #8.2E | % #8.2E | % #8.2E | % #8.2E |"
+                             .formatted(this.crntVal, this.targetVal, this.calcDesiredVal(),
+                                        this.proportion, this.integral, this.derivative));
     }
 }
