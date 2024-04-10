@@ -10,19 +10,32 @@ public class Main {
         PID pid = new PID(0, 10, 0.1, 0, 0);
 
         Scanner Input = new Scanner(System.in);
+        
+        if (pid.startWriting()) {
+            while (true){
 
-        while (true){
+                // System.out.println(Input.hasNextLine());
+                // if (Input.hasNextLine() && Input.nextLine().contains("e")) break;
 
-            //render
-            ClrScreen();
-            pid.renderToConsole();
 
-            while(!Input.hasNextLine());
-            Input.nextLine();
+                if (Double.isNaN(pid.getCrntVal())){
+                    assert true;
+                }
 
-            //update
-            pid.setCrntVal(pid.calcDesiredVal());
+                if (pid.getCrntVal() - pid.getTargetVal() > -0.01 &&
+                    pid.getCrntVal() - pid.getTargetVal() <  0.01) break;
+
+                //render
+                ClrScreen();
+                pid.renderToConsole();
+                pid.renderToFile();
+                //update
+                pid.setCrntVal(pid.calcDesiredVal());
+            }
         }
+
+        pid.stopWriting();
+        Input.close();
     }
 
 }
