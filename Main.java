@@ -7,35 +7,27 @@ public class Main {
     }
 
     public static void main(String[] args){
-        PID pid = new PID(0, 10, 0.1, 0, 0);
-
-        Scanner Input = new Scanner(System.in);
+        PID pid = new PID(0, 10, 1.5, 0.2, 0.1);
         
         if (pid.startWriting()) {
-            while (true){
+            while (pid.isWriting()){
 
                 // System.out.println(Input.hasNextLine());
                 // if (Input.hasNextLine() && Input.nextLine().contains("e")) break;
 
 
-                if (Double.isNaN(pid.getCrntVal())){
-                    assert true;
-                }
-
-                if (pid.getCrntVal() - pid.getTargetVal() > -0.01 &&
-                    pid.getCrntVal() - pid.getTargetVal() <  0.01) break;
-
                 //render
                 ClrScreen();
-                pid.renderToConsole();
+                //pid.renderToConsole();
                 pid.renderToFile();
                 //update
                 pid.setCrntVal(pid.calcDesiredVal());
+
+                if (pid.targetReached()) pid.stopWriting();
+
             }
         }
 
-        pid.stopWriting();
-        Input.close();
     }
 
 }

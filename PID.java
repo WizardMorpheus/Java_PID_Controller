@@ -8,6 +8,8 @@ import java.time.Instant;
  */
 public class PID {
     
+    
+
     private double  crntVal,
                     targetVal,
                     pExpo,
@@ -19,7 +21,8 @@ public class PID {
                     derivative;
                    
     private Instant lastTime,
-                    crntTime;
+                    crntTime,
+                    rcrdTime;
     
     private boolean writing;
     private PrintWriter writer;
@@ -45,12 +48,14 @@ public class PID {
         this.crntVal = val;
 
         this.crntTime = Instant.now();
-        double timeDiff = crntTime.minusNanos(this.lastTime.getNano()).getNano(); // calculate time since last update
+        double timeDiff = this.crntTime.getNano() - this.lastTime.getNano(); // calculate time since last update
+        if (timeDiff < 0) timeDiff += 1000000000;
+        timeDiff /= 1000000000;
+
+        this.proportion = (this.targetVal - this.crntVal) * timeDiff;
         
-        this.proportion = (this.targetVal - this.crntVal) * timeDiff/1000000000;
-        
-        this.integral += (this.lastVal - this.targetVal + (this.crntVal - this.lastVal)/2) //get value difference
-                            * timeDiff/1000000000; //multiply by time difference
+        this.integral += (this.targetVal - this.lastVal + (this.lastVal - this.crntVal)/2) //get value difference
+                            * timeDiff; //multiply by time difference
 
         double INFfixer = timeDiff < 1 ? 1 : timeDiff;
         this.derivative = (this.crntVal - this.lastVal)/(INFfixer);
@@ -93,7 +98,10 @@ public class PID {
             return false;
         }
         this.writing = true;
-        writer.println("time, value, target, P, I, D");
+        writer.println("time (secs), value, target, P, I, D");
+        this.rcrdTime = Instant.now();
+        this.lastTime = this.rcrdTime;
+        this.crntTime = this.rcrdTime;
         return true;
     }
 
@@ -103,13 +111,17 @@ public class PID {
      * @requiresa stopwriting() to be called to close the file
      */
     public void renderToFile(){
+        double timeDiff = (double)(this.crntTime.getNano() - this.rcrdTime.getNano()) / 1000000000; // calculate time since last update
+        //if (timeDiff < 0) timeDiff += 1;
+        timeDiff += this.crntTime.getEpochSecond() - this.rcrdTime.getEpochSecond();
+
         if (this.writing){
-            writer.println("%s, %E, %E, %E, %E, %E".formatted(this.crntTime.toString(), 
+            writer.println("%.9f, %E, %E, %E, %E, %E".formatted(timeDiff, 
                                                               this.crntVal,
                                                               this.targetVal,
-                                                              this.proportion,
-                                                              this.integral,
-                                                              this.derivative));
+                                                              this.proportion * this.pExpo,
+                                                              this.integral * this.iExpo,
+                                                              this.derivative * this.dExpo));
         }
     }
 
@@ -118,5 +130,13 @@ public class PID {
             this.writing = false;
             this.writer.close();
         }
+    }
+
+    public boolean isWriting() {return this.writing; }
+
+    public boolean targetReached(){
+        if (Math.abs(this.crntVal - this.targetVal) < this.targetVal * 0.01 &&
+            Math.abs(this.derivative) < Math.pow(1, -10) ) return true;
+        return false;
     }
 }
