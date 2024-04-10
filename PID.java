@@ -47,18 +47,21 @@ public class PID {
         this.lastVal = this.crntVal;
         this.crntVal = val;
 
+        double err = this.targetVal - this.crntVal;
+        double lastErr = this.targetVal - this.lastVal;
+
         this.crntTime = Instant.now();
         double timeDiff = this.crntTime.getNano() - this.lastTime.getNano(); // calculate time since last update
         if (timeDiff < 0) timeDiff += 1000000000;
         timeDiff /= 1000000000;
 
-        this.proportion = (this.targetVal - this.crntVal) * timeDiff;
+        this.proportion = err;;
         
-        this.integral += (this.targetVal - this.lastVal + (this.lastVal - this.crntVal)/2) //get value difference
+        this.integral += (lastErr + (err - lastErr)/2) //get value difference
                             * timeDiff; //multiply by time difference
 
         double INFfixer = timeDiff < 1 ? 1 : timeDiff;
-        this.derivative = (this.crntVal - this.lastVal)/(INFfixer);
+        this.derivative = (err - lastErr)/(INFfixer);
 
         this.lastTime = Instant.now();
     }
@@ -72,7 +75,7 @@ public class PID {
 
 
     public double calcDesiredVal(){
-        return this.crntVal + this.pExpo*this.proportion + this.iExpo*this.integral + this.dExpo*this.derivative;
+        return this.pExpo*this.proportion + this.iExpo*this.integral + this.dExpo*this.derivative;
     }
 
     /**
@@ -135,7 +138,7 @@ public class PID {
     public boolean isWriting() {return this.writing; }
 
     public boolean targetReached(){
-        if (Math.abs(this.crntVal - this.targetVal) < this.targetVal * 0.01 &&
+        if (Math.abs(this.crntVal - this.targetVal) < this.targetVal * 0.00001 &&
             Math.abs(this.derivative) < Math.pow(1, -10) ) return true;
         return false;
     }

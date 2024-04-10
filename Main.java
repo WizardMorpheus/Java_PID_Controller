@@ -1,5 +1,3 @@
-import java.util.Scanner;
-
 public class Main {
 
     private static void ClrScreen(){
@@ -7,8 +5,10 @@ public class Main {
     }
 
     public static void main(String[] args){
-        PID pid = new PID(0, 10, 1.5, 0.2, 0.1);
+        PID pid = new PID(0, 10, 0.1, 0.5, 150);
         
+        double power = 0;
+
         if (pid.startWriting()) {
             while (pid.isWriting()){
 
@@ -21,7 +21,8 @@ public class Main {
                 //pid.renderToConsole();
                 pid.renderToFile();
                 //update
-                pid.setCrntVal(pid.calcDesiredVal());
+                power += (pid.calcDesiredVal() - power) * 0.001;
+                pid.setCrntVal(pid.getCrntVal() + power);
 
                 if (pid.targetReached()) pid.stopWriting();
 
